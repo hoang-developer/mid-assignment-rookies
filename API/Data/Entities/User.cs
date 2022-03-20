@@ -9,12 +9,11 @@ namespace API.Data.Entities
     {
         [Required, MaxLength(50)]
         public string? Username { get; set; }= string.Empty;
-        [Required, MaxLength(50)]
+        [Required]
         public byte[] PasswordHash { get; set; }
         public byte[] PasswordSalt { get; set; }
-        public bool? isSuperUser { get; set; }
+        public string? Role { get; set; }
         public ICollection<BookBorrowingRequest>? BookBorrowingRequests { get; set; }
         public ICollection<BookBorrowingRequest>? ProcessedRequests { get; set; }
-
     }
 }

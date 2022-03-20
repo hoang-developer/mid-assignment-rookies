@@ -1,24 +1,30 @@
 using API.Models;
+using API.Models.Dtos;
 using API.Services;
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/category/[controller]")]
+// [Authorize(Roles = "admin")]
 public class CategoryController : ControllerBase
 {
 
     private readonly ILogger<CategoryController> _logger;
     private readonly ICategoryService _categoryService;
-
-    public CategoryController(ILogger<CategoryController> logger, ICategoryService categoryService)
+    private readonly IMapper _mapper;
+    
+    public CategoryController(ILogger<CategoryController> logger, ICategoryService categoryService, IMapper mapper)
     {
         _logger = logger;
         _categoryService = categoryService;
+        _mapper = mapper;
     }
 
-    [HttpGet]
+    [HttpGet, AllowAnonymous]
     public async Task<IActionResult> GetAllAsync()
     {
         var entities = await _categoryService.GetAllAsync();
@@ -28,12 +34,13 @@ public class CategoryController : ControllerBase
                           Id = item.Id,
                           Name = item.Name,
                           Books = from p in item.Books
-                                     select new BookViewModel
-                                     {
-                                         Id = p.Id,
-                                         Name = p.Name,
-                                        //  Manufacturer = p.Manufacturer
-                                     }
+                                  select new BookViewDto
+                                  {
+                                      Id = p.Id,
+                                      Name = p.Name,
+                                      Author = p.Author,
+                                      Summary = p.Summary
+                                  }
                       };
         return new JsonResult(results);
     }
@@ -47,11 +54,10 @@ public class CategoryController : ControllerBase
             {
                 Name = model.Name,
                 Books = (from p in model.Books
-                            select new Data.Entities.Book
-                            {
-                                Name = p.Name,
-                                // Manufacturer = p.Manufacturer
-                            }).ToList()
+                         select new Data.Entities.Book
+                         {
+                             Name = p.Name,
+                         }).ToList()
             };
 
             var result = await _categoryService.AddAsync(entity);
@@ -60,12 +66,11 @@ public class CategoryController : ControllerBase
                 Id = result.Id,
                 Name = result.Name,
                 Books = from p in result.Books
-                           select new BookViewModel
-                           {
-                               Id = p.Id,
-                               Name = p.Name,
-                            //    Manufacturer = p.Manufacturer
-                           }
+                        select new BookViewDto
+                        {
+                            Id = p.Id,
+                            Name = p.Name,
+                        }
             });
         }
         catch (Exception ex)
@@ -90,19 +95,12 @@ public class CategoryController : ControllerBase
         var entity = await _categoryService.GetOneAsync(id);
 
         entity.Name = model.Name;
-        // IEnumerable<BookViewModel> enumerable = from p in entity.Books
-        //                                            select new BookViewModel
-        //                                            {
-        //                                                Id = p.Id,
-        //                                                Name = p.Name,
-        //                                                Manufacturer = p.Manufacturer
-        //                                            };
+
         var result = await _categoryService.EditAsync(entity);
         return new JsonResult(new CategoryEditModel
-            {
-                
-                Name = result.Name
-            });
+        {
+            Name = result.Name
+        });
     }
 
     [HttpDelete]
